@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WCK · FHA Capture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wck-orange: #f47920;
+    --wck-blue: #1a5fa8;
+    --bg: #080808;
+    --surface: #111;
+    --surface2: #1a1a1a;
+    --border: #222;
+    --text: #f0f0f0;
+    --muted: #555;
+    --green: #00d4aa;
+    --red: #ff4757;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; overflow-x: hidden; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100dvh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── HOME ── */
+  #home {
+    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  #home::before {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(244,121,32,0.15) 0%, transparent 70%);
+    top: -60px; right: -60px;
+    border-radius: 50%;
+  }
+  #home::after {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(26,95,168,0.12) 0%, transparent 70%);
+    bottom: 80px; left: -40px;
+    border-radius: 50%;
+  }
+  .home-logo { text-align: center; margin-bottom: 48px; position: relative; z-index: 1; }
+  .logo-globe {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--wck-orange), #ff9a4a);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 0 40px rgba(244,121,32,0.3);
+    font-size: 36px;
+  }
+  .logo-name { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .home-title { font-size: 32px; font-weight: 800; text-align: center; line-height: 1.1; margin-bottom: 8px; position: relative; z-index: 1; }
+  .home-title span { color: var(--wck-orange); }
+  .home-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 56px; font-family: 'DM Mono', monospace; position: relative; z-index: 1; }
+  .home-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; position: relative; z-index: 1; }
+  .btn-primary {
+    background: var(--wck-orange);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 18px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(244,121,32,0.35);
+  }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s;
+  }
+  .btn-secondary:active { transform: scale(0.97); }
+  .home-stats { display: flex; gap: 24px; margin-top: 48px; position: relative; z-index: 1; }
+  .stat { text-align: center; }
+  .stat-n { font-size: 28px; font-weight: 800; color: var(--wck-orange); }
+  .stat-l { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+
+  /* ── CAMERA ── */
+  #camera { background: #000; position: relative; }
+  #video { width: 100%; height: 100dvh; object-fit: cover; display: block; }
+  .cam-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    padding: 60px 24px 48px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 60%, rgba(0,0,0,0.7) 100%);
+  }
+  .cam-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .cam-back { background: rgba(0,0,0,0.5); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+  .cam-label { font-size: 12px; font-family: 'DM Mono', monospace; color: rgba(255,255,255,0.7); letter-spacing: 0.1em; text-transform: uppercase; }
+  .cam-mode-toggle { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-family: 'DM Mono', monospace; cursor: pointer; backdrop-filter: blur(10px); }
+  .scan-frame {
+    width: 280px; height: 180px;
+    border: 2px solid var(--wck-orange);
+    border-radius: 12px;
+    position: relative;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.4);
+  }
+  .scan-frame::before, .scan-frame::after,
+  .scan-corner-br::before, .scan-corner-br::after {
+    content: ''; position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--wck-orange); border-style: solid;
+  }
+  .scan-frame::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 10px 0 0 0; }
+  .scan-frame::after { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-radius: 0 10px 0 0; }
+  .scan-corner-br::before { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-radius: 0 0 0 10px; }
+  .scan-corner-br::after { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 10px 0; }
+  .scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(to right, transparent, var(--wck-orange), transparent);
+    animation: scanline 2s ease-in-out infinite;
+  }
+  @keyframes scanline { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0.3; } }
+  .scan-hint { font-size: 12px; color: rgba(255,255,255,0.6); text-align: center; font-family: 'DM Mono', monospace; margin-top: 12px; }
+  .cam-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .cam-gallery { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; background: var(--surface2); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px; }
+  .cam-capture {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .cam-capture:active { transform: scale(0.92); }
+  .cam-capture-inner { width: 56px; height: 56px; border-radius: 50%; background: #fff; }
+  .cam-flip { width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.5); border: none; color: #fff; font-size: 20px; cursor: pointer; backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; }
+  #file-input { display: none; }
+
+  /* ── PROCESSING ── */
+  #processing {
+    background: var(--bg);
+    align-items: center; justify-content: center;
+    padding: 40px 24px;
+  }
+  .proc-visual {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .proc-ring {
+    position: absolute; inset: -4px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--wck-orange);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .proc-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+  .proc-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .proc-steps { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 300px; margin-top: 24px; }
+  .proc-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; transition: color 0.3s; }
+  .proc-step.done { color: var(--green); }
+  .proc-step.active { color: var(--text); }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; flex-shrink: 0; }
+  .proc-step.done .step-dot { background: var(--green); }
+  .proc-step.active .step-dot { background: var(--wck-orange); animation: pulse2 1s infinite; }
+  @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── REVIEW FORM ── */
+  #review { background: var(--bg); }
+  .review-header {
+    background: var(--surface);
+    padding: 20px 20px 0;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .review-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .back-btn { background: none; border: none; color: var(--text); font-size: 20px; cursor: pointer; padding: 4px; }
+  .review-title { font-size: 16px; font-weight: 700; }
+  .confidence-badge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 4px 10px; border-radius: 20px; }
+  .confidence-high { background: rgba(0,212,170,0.15); color: var(--green); }
+  .confidence-med { background: rgba(244,121,32,0.15); color: var(--wck-orange); }
+  .preview-thumb { width: 100%; max-height: 140px; object-fit: cover; display: block; border-bottom: 1px solid var(--border); }
+  .review-body { padding: 20px; }
+  .field-group { margin-bottom: 20px; }
+  .field-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .ai-tag { background: rgba(244,121,32,0.15); color: var(--wck-orange); font-size: 9px; padding: 2px 6px; border-radius: 4px; }
+  .field-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field-input:focus { border-color: var(--wck-orange); }
+  .field-input.ai-filled { border-color: rgba(244,121,32,0.3); }
+  textarea.field-input { resize: none; min-height: 70px; line-height: 1.5; font-size: 14px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .priority-row { display: flex; gap: 8px; }
+  .prio-btn { flex: 1; padding: 10px 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 600; font-family: 'Syne', sans-serif; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .prio-btn.sel-high { background: rgba(255,71,87,0.15); border-color: rgba(255,71,87,0.4); color: var(--red); }
+  .prio-btn.sel-med { background: rgba(244,121,32,0.15); border-color: rgba(244,121,32,0.4); color: var(--wck-orange); }
+  .prio-btn.sel-low { background: rgba(0,212,170,0.15); border-color: rgba(0,212,170,0.4); color: var(--green); }
+  .section-sep { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; margin: 24px 0 16px; display: flex; align-items: center; gap: 10px; }
+  .section-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .save-btn {
+    width: 100%;
+    background: var(--wck-orange);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 18px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    margin-top: 32px;
+    margin-bottom: 40px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 4px 20px rgba(244,121,32,0.35);
+    transition: transform 0.15s;
+  }
+  .save-btn:active { transform: scale(0.98); }
+  .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── SUCCESS ── */
+  #success { background: var(--bg); align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+  .success-icon { width: 100px; height: 100px; border-radius: 50%; background: rgba(0,212,170,0.1); border: 2px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 44px; margin: 0 auto 24px; animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .success-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .success-sub { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .success-company { font-size: 16px; font-weight: 600; color: var(--wck-orange); margin-bottom: 40px; }
+  .success-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 20px; font-size: 13px;
+    white-space: nowrap; z-index: 1000;
+    font-family: 'DM Mono', monospace;
+    animation: toastIn 0.3s ease;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.err { border-color: rgba(255,71,87,0.4); color: var(--red); }
+  .toast.ok { border-color: rgba(0,212,170,0.4); color: var(--green); }
+  @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  /* ── MANUAL MODE hint ── */
+  .manual-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 16px; font-family: 'DM Mono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div class="screen active" id="home">
+  <div class="home-logo">
+    <div class="logo-globe">🌍</div>
+    <div class="logo-name">World Central Kitchen · FHA 2026</div>
+  </div>
+  <h1 class="home-title">Vendor<br><span>Capture</span></h1>
+  <p class="home-sub">Point. Shoot. Done.</p>
+  <div class="home-actions">
+    <button class="btn-primary" onclick="startCamera()">
+      <span>📷</span> Scan Business Card
+    </button>
+    <button class="btn-secondary" onclick="showManual()">
+      <span>✏️</span> Enter Manually
+    </button>
+  </div>
+  <div class="home-stats">
+    <div class="stat"><div class="stat-n" id="stat-today">0</div><div class="stat-l">Today</div></div>
+    <div class="stat"><div class="stat-n" id="stat-total">41</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n" id="stat-high">—</div><div class="stat-l">High Priority</div></div>
+  </div>
+</div>
+
+<!-- ══ CAMERA ══ -->
+<div class="screen" id="camera">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas" style="display:none"></canvas>
+  <div class="cam-overlay">
+    <div class="cam-header">
+      <button class="cam-back" onclick="stopCamera()">✕</button>
+      <span class="cam-label">Align card in frame</span>
+      <button class="cam-mode-toggle" onclick="toggleCamMode()">Gallery</button>
+    </div>
+    <div>
+      <div class="scan-frame">
+        <div class="scan-corner-br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="scan-hint">Business card · Booth sign · Any vendor info</div>
+    </div>
+    <div class="cam-footer">
+      <div class="cam-gallery" onclick="document.getElementById('file-input').click()">🖼</div>
+      <button class="cam-capture" onclick="capturePhoto()">
+        <div class="cam-capture-inner"></div>
+      </button>
+      <button class="cam-flip" onclick="flipCamera()">🔄</button>
+    </div>
+  </div>
+  <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)">
+</div>
+
+<!-- ══ PROCESSING ══ -->
+<div class="screen" id="processing">
+  <div class="proc-visual">
+    <div class="proc-ring"></div>
+    <img id="proc-img" class="proc-img" src="" alt="">
+  </div>
+  <h2 class="proc-title" id="proc-title">Reading card...</h2>
+  <p style="font-size:13px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;">Claude AI is extracting vendor details</p>
+  <div class="proc-steps">
+    <div class="proc-step active" id="step1"><div class="step-dot"></div>Analysing image</div>
+    <div class="proc-step" id="step2"><div class="step-dot"></div>Extracting contact info</div>
+    <div class="proc-step" id="step3"><div class="step-dot"></div>Preparing form</div>
+  </div>
+  <div id="debug-output" style="display:none;margin-top:20px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px;font-size:11px;font-family:monospace;color:#aaa;word-break:break-all;max-width:320px;text-align:left;line-height:1.5;"></div>
+</div>
+
+<!-- ══ REVIEW FORM ══ -->
+<div class="screen" id="review">
+  <div class="review-header">
+    <div class="review-nav">
+      <button class="back-btn" onclick="showScreen('home')">←</button>
+      <span class="review-title">Confirm Details</span>
+      <span class="confidence-badge confidence-high" id="conf-badge">AI Extracted</span>
+    </div>
+  </div>
+  <img id="preview-thumb" class="preview-thumb" src="" alt="" style="display:none">
+  <div class="review-body">
+    <div class="section-sep">Company</div>
+    <div class="field-group">
+      <div class="field-label">Company Name *</div>
+      <input class="field-input" id="f-company" placeholder="Company name" type="text">
+    </div>
+    <div class="two-col">
+      <div class="field-group">
+        <div class="field-label">Country</div>
+        <input class="field-input" id="f-country" placeholder="Country" type="text">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Website</div>
+        <input class="field-input" id="f-website" placeholder="website.com" type="text">
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Product / Category</div>
+      <input class="field-input" id="f-product" placeholder="e.g. Fresh Produce, RTE Meals" type="text">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Product Details</div>
+      <textarea class="field-input" id="f-product-details" placeholder="Key products, volumes, certifications..."></textarea>
+    </div>
+
+    <div class="section-sep">Contact Person</div>
+    <div class="field-group">
+      <div class="field-label">Full Name</div>
+      <input class="field-input" id="f-name" placeholder="Name on card" type="text">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Position / Title</div>
+      <input class="field-input" id="f-title" placeholder="e.g. General Manager" type="text">
+    </div>
+    <div class="two-col">
+      <div class="field-group">
+        <div class="field-label">Email</div>
+        <input class="field-input" id="f-email" placeholder="email@co.com" type="email">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Mobile</div>
+        <input class="field-input" id="f-mobile" placeholder="+65..." type="tel">
+      </div>
+    </div>
+
+    <div class="section-sep">Your Notes</div>
+    <div class="field-group">
+      <div class="field-label">First Impression / Notes</div>
+      <textarea class="field-input" id="f-notes" placeholder="Key takeaways, WCK fit, follow-up actions..."></textarea>
+    </div>
+
+    <div class="section-sep">Priority</div>
+    <div class="priority-row">
+      <button class="prio-btn" id="p-high" onclick="setPriority('high')">🔴 High</button>
+      <button class="prio-btn sel-med" id="p-med" onclick="setPriority('med')">🟡 Medium</button>
+      <button class="prio-btn" id="p-low" onclick="setPriority('low')">🟢 Low</button>
+    </div>
+
+    <button class="save-btn" id="save-btn" onclick="saveToAirtable()">
+      <span>💾</span> Save to Airtable
+    </button>
+  </div>
+</div>
+
+<!-- ══ SUCCESS ══ -->
+<div class="screen" id="success">
+  <div class="success-icon">✓</div>
+  <h2 class="success-title">Saved!</h2>
+  <p class="success-sub">Added to Conference Intake</p>
+  <p class="success-company" id="success-company">—</p>
+  <div class="success-actions">
+    <button class="btn-primary" onclick="startCamera()">📷 Scan Next Card</button>
+    <button class="btn-secondary" onclick="showScreen('home')">← Back to Home</button>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let stream = null;
+let facingMode = 'environment';
+let capturedImageBase64 = null;
+let priority = 'med';
+let todayCount = parseInt(localStorage.getItem('wck_today') || '0');
+let highCount = parseInt(localStorage.getItem('wck_high') || '0');
+const today = new Date().toISOString().split('T')[0];
+if (localStorage.getItem('wck_date') !== today) {
+  todayCount = 0; highCount = 0;
+  localStorage.setItem('wck_date', today);
+}
+updateStats();
+
+// ── API Key ──
+let ANTHROPIC_KEY = localStorage.getItem('wck_api_key') || '';
+
+// ── Airtable Config ──
+const BASE_ID = 'appHajFlWj3zKfdhe';
+const INTAKE_TABLE = 'tblHXrAof6d62Ffpc';
+const FIELDS = {
+  company: 'fld4bCWCPqn5ooQ9J', contact: 'fldt2fLdKwp79KPHV', position: 'fld4vO3yMR1LMaGeL',
+  email: 'fldR2VaVyO8f9YA2C', mobile: 'fldDfRecAvN2OaTGH', country: 'fld4p06m5Ix5AaK8S',
+  website: 'fldYZDQYYBaRh8U1g', productCat: 'fldbAfA0ElaTrCk6r', productDetails: 'fldjrcV72k1pEU9wt',
+  notes: 'fldfktzI9eRJB4aDf', priority: 'fldAT9a9uiActLMrB', dateMet: 'fldRSGvenFK8XGbks'
+};
+
+// ── Helpers ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showToast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function updateStats() {
+  document.getElementById('stat-today').textContent = todayCount;
+  document.getElementById('stat-high').textContent = highCount;
+}
+
+function setPriority(p) {
+  priority = p;
+  ['high','med','low'].forEach(x => {
+    document.getElementById('p-'+x).className = 'prio-btn' + (x === p ? ` sel-${x}` : '');
+  });
+}
+
+// ── Camera ──
+async function startCamera() {
+  showScreen('camera');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }
+    });
+    document.getElementById('video').srcObject = stream;
+  } catch(e) {
+    showToast('Camera access denied', 'err');
+    showScreen('home');
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  showScreen('home');
+}
+
+async function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if (stream) { stream.getTracks().forEach(t => t.stop()); }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+    document.getElementById('video').srcObject = stream;
+  } catch(e) { showToast('Could not switch camera', 'err'); }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  capturedImageBase64 = dataUrl.split(',')[1];
+  stopCamera();
+  processImage(dataUrl);
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    capturedImageBase64 = dataUrl.split(',')[1];
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    processImage(dataUrl);
+  };
+  reader.readAsDataURL(file);
+}
+
+function toggleCamMode() { document.getElementById('file-input').click(); }
+
+// ── Compress image before sending ──
+function compressImage(dataUrl, maxWidth=800, quality=0.6) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, maxWidth / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed.split(',')[1]);
+    };
+    img.src = dataUrl;
+  });
+}
+
+// ── Fast card scan — no web search, instant form fill ──
+async function processImage(dataUrl) {
+  showScreen('processing');
+  document.getElementById('proc-img').src = dataUrl;
+  document.getElementById('proc-title').textContent = 'Reading card...';
+
+  const steps = ['step1','step2','step3'];
+  let si = 0;
+  const stepTimer = setInterval(() => {
+    if (si > 0) document.getElementById(steps[si-1]).className = 'proc-step done';
+    if (si < steps.length) { document.getElementById(steps[si]).className = 'proc-step active'; si++; }
+  }, 600);
+
+  if (!ANTHROPIC_KEY) { clearInterval(stepTimer); showScreen('apikey'); return; }
+
+  try {
+    const compressed = await compressImage(dataUrl, 800, 0.6);
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: compressed } },
+            { type: 'text', text: 'Read this business card. Return ONLY this JSON, no other text: {"company":"","contactName":"","position":"","email":"","mobile":"","country":"","website":"","productCategory":"","productDetails":"","confidence":"high"}' }
+          ]
+        }]
+      })
+    });
+
+    clearInterval(stepTimer);
+    steps.forEach(s => document.getElementById(s).className = 'proc-step done');
+
+    const data = await res.json();
+    const debugEl = document.getElementById('debug-output');
+
+    if (data.error) {
+      const msg = data.error.message || 'Unknown error';
+      showToast('Error: ' + msg.substring(0, 60), 'err');
+      if (debugEl) { debugEl.style.display='block'; debugEl.textContent='ERROR: '+msg; }
+      setTimeout(() => populateForm({}, dataUrl), 1000);
+      return;
+    }
+
+    let extracted = {};
+    const rawText = (data.content || []).filter(b => b.type==='text').map(b => b.text).join(' ');
+    let jsonStr = rawText.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const jsonMatch = jsonStr.match(/\{[^]*\}/);
+    if (jsonMatch) jsonStr = jsonMatch[0];
+
+    try {
+      extracted = JSON.parse(jsonStr);
+    } catch(e) {
+      const emailMatch = rawText.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+      extracted = { email: emailMatch ? emailMatch[0] : '', confidence: 'low' };
+    }
+
+    // Show form immediately with card data
+    populateForm(extracted, dataUrl);
+
+    // Website enrichment removed for speed — add product notes manually
+
+  } catch(e) {
+    clearInterval(stepTimer);
+    showToast('Connection error', 'err');
+    setTimeout(() => populateForm({}, dataUrl), 1000);
+  }
+}
+
+// ── Save to Airtable ──
+async function saveToAirtable() {
+  const company = document.getElementById('f-company').value.trim();
+  if (!company) { showToast('Company name is required', 'err'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.innerHTML = '<span>⏳</span> Saving...';
+
+  const priorityMap = { high: '🔴 High', med: '🟡 Medium', low: '🟢 Low' };
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 500,
+        system: 'You are an Airtable assistant. Use the create_records_for_table tool to save the record. Respond only with "saved".',
+        messages: [{
+          role: 'user',
+          content: `Save this to Airtable base ${BASE_ID} table ${INTAKE_TABLE}:
+${JSON.stringify({
+  [FIELDS.company]: company,
+  [FIELDS.contact]: document.getElementById('f-name').value.trim(),
+  [FIELDS.position]: document.getElementById('f-title').value.trim(),
+  [FIELDS.email]: document.getElementById('f-email').value.trim(),
+  [FIELDS.mobile]: document.getElementById('f-mobile').value.trim(),
+  [FIELDS.country]: document.getElementById('f-country').value.trim(),
+  [FIELDS.website]: document.getElementById('f-website').value.trim(),
+  [FIELDS.productCat]: document.getElementById('f-product').value.trim(),
+  [FIELDS.productDetails]: document.getElementById('f-product-details').value.trim(),
+  [FIELDS.notes]: document.getElementById('f-notes').value.trim(),
+  [FIELDS.priority]: priorityMap[priority],
+  [FIELDS.dateMet]: new Date().toISOString().split('T')[0]
+})}`
+        }],
+        mcp_servers: [{ type: 'url', url: 'https://mcp.airtable.com/mcp', name: 'airtable-mcp' }]
+      })
+    });
+
+    todayCount++;
+    if (priority === 'high') highCount++;
+    localStorage.setItem('wck_today', todayCount);
+    localStorage.setItem('wck_high', highCount);
+    updateStats();
+
+    document.getElementById('success-company').textContent = company;
+    showScreen('success');
+
+  } catch(e) {
+    showToast('Save failed — check connection', 'err');
+    btn.disabled = false; btn.innerHTML = '<span>💾</span> Save to Airtable';
+  }
+}
+
+function saveKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k.startsWith('sk-ant-')) { showToast('Invalid key — must start with sk-ant-', 'err'); return; }
+  ANTHROPIC_KEY = k;
+  localStorage.setItem('wck_api_key', k);
+  showToast('API key saved! ✓');
+  showScreen('home');
+}
+
+// Show API key screen on load if no key saved
+window.addEventListener('load', () => { if (!ANTHROPIC_KEY) showScreen('apikey'); });
+</script>
+
+<!-- API KEY SCREEN -->
+<div class="screen" id="apikey" style="background:var(--bg);align-items:center;justify-content:center;padding:40px 24px;text-align:center;">
+  <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f47920,#ff9a4a);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;box-shadow:0 0 30px rgba(244,121,32,.3);">🔑</div>
+  <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">API Key Required</h2>
+  <p style="font-size:13px;color:var(--muted);font-family:monospace;margin-bottom:28px;line-height:1.7;">Enter your Anthropic API key to enable<br>AI business card scanning.</p>
+  <div style="width:100%;max-width:320px;">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;text-align:left;">
+      <p style="font-size:10px;font-family:monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">How to get your key:</p>
+      <ol style="font-size:12px;color:#888;padding-left:16px;line-height:2.2;">
+        <li>Go to <strong style="color:#f47920">console.anthropic.com</strong></li>
+        <li>Sign in or create a free account</li>
+        <li>Click <strong>API Keys</strong> → Create Key</li>
+        <li>Copy and paste it below</li>
+      </ol>
+    </div>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:14px;color:var(--text);font-family:monospace;outline:none;margin-bottom:12px;-webkit-appearance:none;transition:border-color .2s;" onfocus="this.style.borderColor='#f47920'" onblur="this.style.borderColor='#222'" onkeydown="if(event.key==='Enter')saveKey()">
+    <button onclick="saveKey()" style="width:100%;background:#f47920;color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 20px rgba(244,121,32,.35);margin-bottom:12px;">Save & Continue →</button>
+    <p style="font-size:11px;color:var(--muted);font-family:monospace;line-height:1.7;">Your key is stored only on this device.<br>Never shared with anyone.</p>
+  </div>
+</div>
+
+</body>
+</html>
